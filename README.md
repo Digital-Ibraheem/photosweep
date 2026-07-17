@@ -8,6 +8,8 @@ photos in a folder, writes a visual **HTML review report**, and moves the copies
 
 ![Demo: scan, review, quarantine, undo](docs/demo.gif)
 
+<sub>Screenshots of real runs on the bundled fixture library: scan twice (the second run is served from the cache), review and select copies, quarantine, undo.</sub>
+
 ```sh
 # Scan a folder and create an HTML report
 photosweep scan ~/Pictures/Exports --output ./report
