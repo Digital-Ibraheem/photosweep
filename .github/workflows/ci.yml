@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Build (debug)
+        run: swift build
+      - name: Test
+        run: ./scripts/test.sh
+      - name: Build (release)
+        run: swift build -c release
+      - name: End-to-end smoke test
+        run: |
+          set -euo pipefail
+          export PHOTOSWEEP_STATE_DIR="$RUNNER_TEMP/state"
+          .build/release/photosweep-dev make-fixtures --output "$RUNNER_TEMP/lib"
+          .build/release/photosweep scan "$RUNNER_TEMP/lib" -o "$RUNNER_TEMP/report" --cache "$RUNNER_TEMP/cache.json"
+          .build/release/photosweep scan "$RUNNER_TEMP/lib" -o "$RUNNER_TEMP/report" --cache "$RUNNER_TEMP/cache.json" | tee second.txt
+          grep -q "fingerprints computed: 0" second.txt
+          .build/release/photosweep-dev evaluate --fixtures "$RUNNER_TEMP/lib"
