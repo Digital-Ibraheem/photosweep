@@ -66,15 +66,22 @@ public struct KeepPolicy: Sendable {
         let ranked = candidates.sorted { a, b in
             let pa = a.pixelCount ?? 0, pb = b.pixelCount ?? 0
             if pa != pb { return pa > pb }
-            if a.size != b.size { return a.size > b.size }
             let fa = preferredRank(a.path), fb = preferredRank(b.path)
             if fa != fb { return fa < fb }
+            let ca = Self.looksLikeCopy(a.path), cb = Self.looksLikeCopy(b.path)
+            if ca != cb { return !ca }
+            if a.size != b.size { return a.size > b.size }
             return a.path < b.path
         }
         let best = ranked[0], runnerUp = ranked[1...].first
         let reason: String
         if let r = runnerUp, (best.pixelCount ?? 0) > (r.pixelCount ?? 0) {
             reason = "Highest resolution"
+        } else if let folder = preferredFolder(for: best.path),
+                  runnerUp.map({ preferredRank($0.path) > preferredRank(best.path) }) ?? true {
+            reason = "Same resolution, in preferred folder \(folder)"
+        } else if let r = runnerUp, !Self.looksLikeCopy(best.path) && Self.looksLikeCopy(r.path) {
+            reason = "Same resolution, other names look like copies"
         } else if let r = runnerUp, best.size > r.size {
             reason = "Same resolution, largest file (least compressed)"
         } else {

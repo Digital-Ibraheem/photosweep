@@ -80,3 +80,15 @@ import Testing
         #expect(s == .init(path: "/r/big.jpg", reason: "Highest resolution"))
     }
 }
+
+@Suite struct SimilarKeepTests {
+    @Test func preferredFolderBeatsLargerFileAtSameResolution() {
+        let policy = KeepPolicy(preferredFolders: ["/r/Originals"])
+        let s = policy.suggestForSimilarGroup([
+            .init(path: "/r/Converted/a.png", size: 900, mtimeNanos: 0, pixelCount: 100),
+            .init(path: "/r/Originals/a.jpg", size: 300, mtimeNanos: 0, pixelCount: 100),
+        ])
+        #expect(s.path == "/r/Originals/a.jpg")
+        #expect(s.reason.contains("preferred folder"))
+    }
+}

@@ -41,7 +41,7 @@ import Testing
         let manifest = try await Scanner(options: ScanOptions(root: dir.url)).run()
         let out = try TempDir()
         let report = ReportGenerator(outputDirectory: out.url)
-        let written = try report.write(manifest)
+        let written = try await report.write(manifest)
         let html = try String(contentsOf: report.htmlURL, encoding: .utf8)
         #expect(!html.contains("<script>alert(1)"))
         #expect(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;.jpg"))

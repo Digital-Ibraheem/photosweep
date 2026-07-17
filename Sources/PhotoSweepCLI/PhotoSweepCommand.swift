@@ -8,7 +8,7 @@ struct PhotoSweepCommand: AsyncParsableCommand {
         commandName: "photosweep",
         abstract: "Find duplicate and similar photos, review them, and safely quarantine copies.",
         version: PhotoSweep.version,
-        subcommands: [Scan.self]
+        subcommands: [Scan.self, Quarantine.self, Undo.self, Operations.self]
     )
 }
 
@@ -66,8 +66,8 @@ struct Scan: AsyncParsableCommand {
         }
         progress.finish()
 
-        let report = ReportGenerator(outputDirectory: URL(fileURLWithPath: absolutePath(output)))
-        try report.write(manifest)
+        let report = ReportGenerator(outputDirectory: URL(fileURLWithPath: absolutePath(output)), workers: workers)
+        try await report.write(manifest)
         printSummary(manifest.summary)
         print("Report: \(report.htmlURL.path)")
     }
