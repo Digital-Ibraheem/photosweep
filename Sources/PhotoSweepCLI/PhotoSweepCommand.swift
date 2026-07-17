@@ -66,7 +66,10 @@ struct Scan: AsyncParsableCommand {
         }
         progress.finish()
 
-        let report = ReportGenerator(outputDirectory: URL(fileURLWithPath: absolutePath(output)), workers: workers)
+        // Create the folder first so symlinks (e.g. /tmp -> /private/tmp) resolve the same way on every run.
+        let outputURL = URL(fileURLWithPath: absolutePath(output))
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+        let report = ReportGenerator(outputDirectory: outputURL.resolvingSymlinksInPath(), workers: workers)
         try await report.write(manifest)
         printSummary(manifest.summary)
         print("Report: \(report.htmlURL.path)")
