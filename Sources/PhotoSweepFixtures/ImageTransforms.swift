@@ -6,7 +6,8 @@ import UniformTypeIdentifiers
 
 /// Deterministic image edits used to build the labeled fixture set.
 public enum ImageTransforms {
-    static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    // CIContext is documented as thread-safe; older SDKs do not mark it Sendable.
+    nonisolated(unsafe) static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
     static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 
     public static func load(_ path: String) -> CGImage? {
