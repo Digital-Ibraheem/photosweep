@@ -36,8 +36,15 @@ struct Scan: AsyncParsableCommand {
     @Flag(help: "Ignore cached results and recompute every hash and fingerprint.")
     var verify = false
 
+    @Option(help: "Visual match threshold: max differing bits (0-64) from a group's representative.")
+    var threshold: Int = SimilarityMatcher.defaultThreshold
+
+    @Flag(help: "Only find byte-identical duplicates (skip decoding images).")
+    var exactOnly = false
+
     func validate() throws {
         guard workers >= 1 else { throw ValidationError("--workers must be at least 1") }
+        guard (0...64).contains(threshold) else { throw ValidationError("--threshold must be between 0 and 64") }
     }
 
     func run() async throws {
@@ -46,7 +53,7 @@ struct Scan: AsyncParsableCommand {
             ?? ScanCache.defaultURL(forRoot: root.path)
         let options = ScanOptions(
             root: root, preferredFolders: preferredFolders.map(absolutePath), workers: workers,
-            cacheURL: cacheURL, verify: verify)
+            cacheURL: cacheURL, verify: verify, findSimilar: !exactOnly, similarityThreshold: threshold)
         let progress = ProgressLine()
         let interrupt = InterruptHandler()
         let manifest: ScanManifest
@@ -77,8 +84,9 @@ func printSummary(_ s: ScanSummary) {
     print("""
     Scanned \(s.filesScanned) photos (\(bytes(s.bytesScanned))) in \(String(format: "%.2f", s.durationSeconds))s
       Exact duplicate groups: \(s.exactGroupCount) (\(s.exactDuplicateFiles) extra copies, \(bytes(s.recoverableBytes)) recoverable)
-      Cache hits: \(s.cacheHits), hashes computed: \(s.hashesComputed), workers: \(s.workers)
-      Errors: \(s.errorCount), skipped non-photo files: \(s.skippedFiles)
+      Visual match candidates: \(s.similarGroupCount) groups (threshold \(s.similarityThreshold))
+      Cache hits: \(s.cacheHits), hashes computed: \(s.hashesComputed), fingerprints computed: \(s.fingerprintsComputed), workers: \(s.workers)
+      Errors: \(s.errorCount) (\(s.decodeFailures) undecodable), skipped non-photo files: \(s.skippedFiles)
     """)
 }
 
@@ -97,7 +105,8 @@ final class ProgressLine: @unchecked Sendable {
         let text: String
         switch event {
         case .discovered(let n): text = "Found \(n) photos"
-        case .processing(let done, let total): text = "Processing \(done)/\(total)"
+        case .processing(let done, let total): text = "Hashing and fingerprinting \(done)/\(total)"
+        case .hashingCandidates(let done, let total): text = "Hashing similar-image candidates \(done)/\(total)"
         }
         FileHandle.standardError.write(Data("\r\u{1B}[K\(text)".utf8))
     }

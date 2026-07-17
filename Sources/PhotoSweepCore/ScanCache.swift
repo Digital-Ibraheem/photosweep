@@ -10,6 +10,7 @@ public struct CacheEntry: Codable, Hashable, Sendable {
     /// Visual fingerprint as 16 hex digits.
     public var fingerprint: String?
     public var fingerprintVersion: Int?
+    public var lowDetail: Bool?
     public var width: Int?
     public var height: Int?
     /// True when the last decode attempt failed. Failures are retried on the next scan.
@@ -27,10 +28,19 @@ public struct CacheEntry: Codable, Hashable, Sendable {
     }
 
     /// The cached fingerprint, if it was produced by the current algorithm.
-    public var currentFingerprint: UInt64? {
+    public var currentFingerprint: VisualFingerprint? {
         guard fingerprintVersion == VisualFingerprint.algorithmVersion, !decodeFailed,
-              let fingerprint else { return nil }
-        return UInt64(fingerprint, radix: 16)
+              let fingerprint, let bits = UInt64(fingerprint, radix: 16) else { return nil }
+        return VisualFingerprint(bits: bits, lowDetail: lowDetail ?? false)
+    }
+
+    mutating func setFingerprint(_ fp: VisualFingerprint?, width: Int?, height: Int?) {
+        fingerprint = fp?.hex
+        lowDetail = fp?.lowDetail
+        fingerprintVersion = VisualFingerprint.algorithmVersion
+        decodeFailed = fp == nil
+        self.width = width
+        self.height = height
     }
 }
 

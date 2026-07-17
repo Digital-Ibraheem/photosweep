@@ -69,6 +69,8 @@ public struct SimilarGroup: Codable, Hashable, Sendable {
         public var path: String
         /// Hamming distance to the representative's fingerprint (0 for the representative).
         public var distance: Int
+        /// Set when this file also has byte-identical copies, shown in that exact group.
+        public var exactGroupId: String?
     }
 
     public var id: String
