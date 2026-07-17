@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v13)],
     products: [
         .executable(name: "photosweep", targets: ["PhotoSweepCLI"]),
+        .executable(name: "photosweep-dev", targets: ["PhotoSweepDev"]),
         .library(name: "PhotoSweepCore", targets: ["PhotoSweepCore"]),
     ],
     dependencies: [
@@ -20,6 +21,14 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
-        .testTarget(name: "PhotoSweepCoreTests", dependencies: ["PhotoSweepCore"]),
+        .target(name: "PhotoSweepFixtures", dependencies: ["PhotoSweepCore"]),
+        .executableTarget(
+            name: "PhotoSweepDev",
+            dependencies: [
+                "PhotoSweepCore", "PhotoSweepFixtures",
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ]
+        ),
+        .testTarget(name: "PhotoSweepCoreTests", dependencies: ["PhotoSweepCore", "PhotoSweepFixtures"]),
     ]
 )
