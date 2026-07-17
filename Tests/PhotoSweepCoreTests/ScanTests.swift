@@ -4,7 +4,7 @@ import Testing
 
 @Suite struct ExactScanTests {
     /// Milestone 1 completion check: originals, renamed copies, unrelated photos and a corrupted duplicate.
-    @Test func findsRenamedCopiesAndCorruptDuplicates() throws {
+    @Test func findsRenamedCopiesAndCorruptDuplicates() async throws {
         let dir = try TempDir()
         let beach = TestImages.jpeg(seed: 1)
         try dir.write("Originals/beach.jpg", beach)
@@ -21,7 +21,7 @@ import Testing
         sameSize[sameSize.count - 1] ^= 0xFF
         try dir.write("decoy.jpg", sameSize)
 
-        let manifest = try Scanner(options: ScanOptions(root: dir.url)).run()
+        let manifest = try await Scanner(options: ScanOptions(root: dir.url)).run()
         let groups = manifest.exactGroups.map { Set($0.paths.map { $0.replacingOccurrences(of: dir.path + "/", with: "") }) }
         #expect(Set(groups) == [
             ["Originals/beach.jpg", "Exports/beach copy.jpg", "Exports/renamed/IMG_9999.jpg"],
@@ -33,12 +33,12 @@ import Testing
         #expect(beachGroup.keep == dir.file("Originals/beach.jpg"))
     }
 
-    @Test func reportEscapesFileNames() throws {
+    @Test func reportEscapesFileNames() async throws {
         let dir = try TempDir()
         let img = TestImages.jpeg(seed: 7)
         try dir.write("<script>alert(1)</script>.jpg", img)
         try dir.write("a&b \"quoted\".jpg", img)
-        let manifest = try Scanner(options: ScanOptions(root: dir.url)).run()
+        let manifest = try await Scanner(options: ScanOptions(root: dir.url)).run()
         let out = try TempDir()
         let report = ReportGenerator(outputDirectory: out.url)
         let written = try report.write(manifest)
